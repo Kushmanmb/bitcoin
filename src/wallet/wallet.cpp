@@ -1693,7 +1693,7 @@ CAmount CWallet::GetDebit(const CTransaction& tx) const
     {
         nDebit += GetDebit(txin);
         if (!MoneyRange(nDebit))
-            throw std::runtime_error(std::string(__func__) + ": value out of range");
+            THROW_WALLET_ERROR("value out of range");
     }
     return nDebit;
 }
@@ -1733,7 +1733,7 @@ void CWallet::SetWalletFlagWithDB(WalletBatch& batch, uint64_t flags)
     LOCK(cs_wallet);
     m_wallet_flags |= flags;
     if (!batch.WriteWalletFlags(m_wallet_flags))
-        throw std::runtime_error(std::string(__func__) + ": writing wallet flags failed");
+        THROW_WALLET_ERROR("writing wallet flags failed");
 }
 
 void CWallet::UnsetWalletFlag(uint64_t flag)
@@ -1747,7 +1747,7 @@ void CWallet::UnsetWalletFlagWithDB(WalletBatch& batch, uint64_t flag)
     LOCK(cs_wallet);
     m_wallet_flags &= ~flag;
     if (!batch.WriteWalletFlags(m_wallet_flags))
-        throw std::runtime_error(std::string(__func__) + ": writing wallet flags failed");
+        THROW_WALLET_ERROR("writing wallet flags failed");
 }
 
 void CWallet::UnsetBlankWalletFlag(WalletBatch& batch)
@@ -1782,7 +1782,7 @@ void CWallet::InitWalletFlags(uint64_t flags)
     assert(m_wallet_flags == 0);
 
     if (!WalletBatch(GetDatabase()).WriteWalletFlags(flags)) {
-        throw std::runtime_error(std::string(__func__) + ": writing wallet flags failed");
+        THROW_WALLET_ERROR("writing wallet flags failed");
     }
 
     if (!LoadWalletFlags(flags)) assert(false);
@@ -2327,7 +2327,7 @@ void CWallet::CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::ve
 
     // wtx can only be null if the db write failed.
     if (!wtx) {
-        throw std::runtime_error(std::string(__func__) + ": Wallet db error, transaction commit failed");
+        THROW_WALLET_ERROR("Wallet db error, transaction commit failed");
     }
 
     // Notify that old coins are spent
@@ -3565,10 +3565,10 @@ DescriptorScriptPubKeyMan& CWallet::SetupDescriptorScriptPubKeyMan(WalletBatch& 
     auto spk_manager = std::unique_ptr<DescriptorScriptPubKeyMan>(new DescriptorScriptPubKeyMan(*this, m_keypool_size));
     if (HasEncryptionKeys()) {
         if (IsLocked()) {
-            throw std::runtime_error(std::string(__func__) + ": Wallet is locked, cannot setup new descriptors");
+            THROW_WALLET_ERROR("Wallet is locked, cannot setup new descriptors");
         }
         if (!spk_manager->CheckDecryptionKey(vMasterKey) && !spk_manager->Encrypt(vMasterKey, &batch)) {
-            throw std::runtime_error(std::string(__func__) + ": Could not encrypt new descriptors");
+            THROW_WALLET_ERROR("Could not encrypt new descriptors");
         }
     }
     spk_manager->SetupDescriptorGeneration(batch, master_key, output_type, internal);
@@ -3622,21 +3622,21 @@ void CWallet::SetupDescriptorScriptPubKeyMans()
         int account = 0;
         UniValue signer_res = signer->GetDescriptors(account);
 
-        if (!signer_res.isObject()) throw std::runtime_error(std::string(__func__) + ": Unexpected result");
+        if (!signer_res.isObject()) THROW_WALLET_ERROR("Unexpected result");
 
         WalletBatch batch(GetDatabase());
         if (!batch.TxnBegin()) throw std::runtime_error("Error: cannot create db transaction for descriptors import");
 
         for (bool internal : {false, true}) {
             const UniValue& descriptor_vals = signer_res.find_value(internal ? "internal" : "receive");
-            if (!descriptor_vals.isArray()) throw std::runtime_error(std::string(__func__) + ": Unexpected result");
+            if (!descriptor_vals.isArray()) THROW_WALLET_ERROR("Unexpected result");
             for (const UniValue& desc_val : descriptor_vals.get_array().getValues()) {
                 const std::string& desc_str = desc_val.getValStr();
                 FlatSigningProvider keys;
                 std::string desc_error;
                 auto descs = Parse(desc_str, keys, desc_error, false);
                 if (descs.empty()) {
-                    throw std::runtime_error(std::string(__func__) + ": Invalid descriptor \"" + desc_str + "\" (" + desc_error + ")");
+                    THROW_WALLET_ERROR("Invalid descriptor \"" + desc_str + "\" (" + desc_error + ")");
                 }
                 auto& desc = descs.at(0);
                 if (!desc->GetOutputType()) {
@@ -3665,7 +3665,7 @@ void CWallet::AddActiveScriptPubKeyMan(uint256 id, OutputType type, bool interna
 void CWallet::AddActiveScriptPubKeyManWithDb(WalletBatch& batch, uint256 id, OutputType type, bool internal)
 {
     if (!batch.WriteActiveScriptPubKeyMan(static_cast<uint8_t>(type), id, internal)) {
-        throw std::runtime_error(std::string(__func__) + ": writing active ScriptPubKeyMan id failed");
+        THROW_WALLET_ERROR("writing active ScriptPubKeyMan id failed");
     }
     LoadActiveScriptPubKeyMan(id, type, internal);
 }
@@ -3697,7 +3697,7 @@ void CWallet::DeactivateScriptPubKeyMan(uint256 id, OutputType type, bool intern
         WalletLogPrintf("Deactivate spkMan: id = %s, type = %s, internal = %s\n", id.ToString(), FormatOutputType(type), internal ? "true" : "false");
         WalletBatch batch(GetDatabase());
         if (!batch.EraseActiveScriptPubKeyMan(static_cast<uint8_t>(type), internal)) {
-            throw std::runtime_error(std::string(__func__) + ": erasing active ScriptPubKeyMan id failed");
+            THROW_WALLET_ERROR("erasing active ScriptPubKeyMan id failed");
         }
 
         auto& spk_mans = internal ? m_internal_spk_managers : m_external_spk_managers;
@@ -3731,7 +3731,7 @@ std::optional<bool> CWallet::IsInternalScriptPubKeyMan(ScriptPubKeyMan* spk_man)
 
     const auto desc_spk_man = dynamic_cast<DescriptorScriptPubKeyMan*>(spk_man);
     if (!desc_spk_man) {
-        throw std::runtime_error(std::string(__func__) + ": unexpected ScriptPubKeyMan type.");
+        THROW_WALLET_ERROR("unexpected ScriptPubKeyMan type.");
     }
 
     LOCK(desc_spk_man->cs_desc_man);

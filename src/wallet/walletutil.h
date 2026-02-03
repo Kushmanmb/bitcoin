@@ -10,6 +10,9 @@
 
 #include <vector>
 
+// Macro to throw wallet errors with function name prefix
+#define THROW_WALLET_ERROR(msg) throw std::runtime_error(std::string(__func__) + ": " + (msg))
+
 namespace wallet {
 
 enum WalletFlags : uint64_t {

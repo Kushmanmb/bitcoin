@@ -32,7 +32,7 @@ bool AllInputsMine(const CWallet& wallet, const CTransaction& tx)
 CAmount OutputGetCredit(const CWallet& wallet, const CTxOut& txout)
 {
     if (!MoneyRange(txout.nValue))
-        throw std::runtime_error(std::string(__func__) + ": value out of range");
+        THROW_WALLET_ERROR("value out of range");
     LOCK(wallet.cs_wallet);
     return (wallet.IsMine(txout) ? txout.nValue : 0);
 }
@@ -44,7 +44,7 @@ CAmount TxGetCredit(const CWallet& wallet, const CTransaction& tx)
     {
         nCredit += OutputGetCredit(wallet, txout);
         if (!MoneyRange(nCredit))
-            throw std::runtime_error(std::string(__func__) + ": value out of range");
+            THROW_WALLET_ERROR("value out of range");
     }
     return nCredit;
 }
@@ -80,7 +80,7 @@ CAmount OutputGetChange(const CWallet& wallet, const CTxOut& txout)
 {
     AssertLockHeld(wallet.cs_wallet);
     if (!MoneyRange(txout.nValue))
-        throw std::runtime_error(std::string(__func__) + ": value out of range");
+        THROW_WALLET_ERROR("value out of range");
     return (OutputIsChange(wallet, txout) ? txout.nValue : 0);
 }
 
@@ -92,7 +92,7 @@ CAmount TxGetChange(const CWallet& wallet, const CTransaction& tx)
     {
         nChange += OutputGetChange(wallet, txout);
         if (!MoneyRange(nChange))
-            throw std::runtime_error(std::string(__func__) + ": value out of range");
+            THROW_WALLET_ERROR("value out of range");
     }
     return nChange;
 }

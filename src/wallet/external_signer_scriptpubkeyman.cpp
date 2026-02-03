@@ -35,7 +35,7 @@ bool ExternalSignerScriptPubKeyMan::SetupDescriptor(WalletBatch& batch, std::uni
 
     // Store the descriptor
     if (!batch.WriteDescriptor(GetID(), m_wallet_descriptor)) {
-        throw std::runtime_error(std::string(__func__) + ": writing descriptor failed");
+        THROW_WALLET_ERROR("writing descriptor failed");
     }
 
     // TopUp

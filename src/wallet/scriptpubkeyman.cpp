@@ -833,7 +833,7 @@ util::Result<CTxDestination> DescriptorScriptPubKeyMan::GetNewDestination(const 
         std::optional<OutputType> desc_addr_type = m_wallet_descriptor.descriptor->GetOutputType();
         assert(desc_addr_type);
         if (type != *desc_addr_type) {
-            throw std::runtime_error(std::string(__func__) + ": Types are inconsistent. Stored type does not match type of newly generated address");
+            THROW_WALLET_ERROR("Types are inconsistent. Stored type does not match type of newly generated address");
         }
 
         TopUp();
@@ -1048,7 +1048,7 @@ bool DescriptorScriptPubKeyMan::TopUpWithDB(WalletBatch& batch, unsigned int siz
         // Merge and write the cache
         DescriptorCache new_items = m_wallet_descriptor.cache.MergeAndDiff(temp_cache);
         if (!batch.WriteDescriptorCacheItems(id, new_items)) {
-            throw std::runtime_error(std::string(__func__) + ": writing cache items failed");
+            THROW_WALLET_ERROR("writing cache items failed");
         }
         m_max_cached_index++;
     }
@@ -1075,7 +1075,7 @@ std::vector<WalletDestination> DescriptorScriptPubKeyMan::MarkUnusedAddresses(co
             std::vector<CScript> scripts_temp;
             while (index >= m_wallet_descriptor.next_index) {
                 if (!m_wallet_descriptor.descriptor->ExpandFromCache(m_wallet_descriptor.next_index, m_wallet_descriptor.cache, scripts_temp, *out_keys)) {
-                    throw std::runtime_error(std::string(__func__) + ": Unable to expand descriptor from cache");
+                    THROW_WALLET_ERROR("Unable to expand descriptor from cache");
                 }
                 CTxDestination dest;
                 ExtractDestination(scripts_temp[0], dest);
@@ -1096,7 +1096,7 @@ void DescriptorScriptPubKeyMan::AddDescriptorKey(const CKey& key, const CPubKey 
     LOCK(cs_desc_man);
     WalletBatch batch(m_storage.GetDatabase());
     if (!AddDescriptorKeyWithDB(batch, key, pubkey)) {
-        throw std::runtime_error(std::string(__func__) + ": writing descriptor private key failed");
+        THROW_WALLET_ERROR("writing descriptor private key failed");
     }
 }
 
@@ -1146,10 +1146,10 @@ bool DescriptorScriptPubKeyMan::SetupDescriptorGeneration(WalletBatch& batch, co
 
     // Store the master private key, and descriptor
     if (!AddDescriptorKeyWithDB(batch, master_key.key, master_key.key.GetPubKey())) {
-        throw std::runtime_error(std::string(__func__) + ": writing descriptor master private key failed");
+        THROW_WALLET_ERROR("writing descriptor master private key failed");
     }
     if (!batch.WriteDescriptor(GetID(), m_wallet_descriptor)) {
-        throw std::runtime_error(std::string(__func__) + ": writing descriptor failed");
+        THROW_WALLET_ERROR("writing descriptor failed");
     }
 
     // TopUp
@@ -1489,7 +1489,7 @@ void DescriptorScriptPubKeyMan::WriteDescriptor()
     LOCK(cs_desc_man);
     WalletBatch batch(m_storage.GetDatabase());
     if (!batch.WriteDescriptor(GetID(), m_wallet_descriptor)) {
-        throw std::runtime_error(std::string(__func__) + ": writing descriptor failed");
+        THROW_WALLET_ERROR("writing descriptor failed");
     }
 }
 
@@ -1562,7 +1562,7 @@ void DescriptorScriptPubKeyMan::UpgradeDescriptorCache()
     // Cache the last hardened xpubs
     DescriptorCache diff = m_wallet_descriptor.cache.MergeAndDiff(temp_cache);
     if (!WalletBatch(m_storage.GetDatabase()).WriteDescriptorCacheItems(GetID(), diff)) {
-        throw std::runtime_error(std::string(__func__) + ": writing cache items failed");
+        THROW_WALLET_ERROR("writing cache items failed");
     }
 }
 

@@ -1,29 +1,42 @@
-# Patterns that are specific to a text editor, IDE, operating system, or user
-# environment are not added here. They should be added to your local gitignore
-# file instead:
-# https://docs.github.com/en/get-started/git-basics/ignoring-files#configuring-ignored-files-for-all-repositories-on-your-computer
+# Ignored files
 
-# Build subdirectories.
-/*build*
-!/build-aux
-!/build_msvc
+# Private keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.der
+id_rsa
+id_dsa
+*.pub
 
-*.pyc
+# Environment files
+.env
+.env.local
+.env.*.local
+*.secret
 
-# Only ignore unexpected patches
-*.patch
-!ci/test/*.patch
-!contrib/guix/patches/*.patch
-!depends/patches/**/*.patch
+# Sensitive configuration
+config.json
+secrets.json
+credentials.json
+auth.json
 
-/CMakeUserPresets.json
+# Private documentation
+/docs/private/
+/doc/private/
+*.private.md
 
-# Previous releases
-/releases
+# Database files
+*.db
+*.sqlite
+*.sqlite3
 
-# cargo default target dir
-target/
+# Wallet files
+wallet.dat
+*.wallet
 
-/guix-build-*
-
-/ci/scratch/
+# Logs
+*.log
+logs/
